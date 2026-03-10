@@ -5,7 +5,7 @@ import os
 
 # PAGE CONFIG
 st.set_page_config(
-    page_title="Electrical Calculator",
+    page_title="CableCalc",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -36,7 +36,7 @@ def check_password():
         return True
     col_a, col_b, col_c = st.columns([1, 2, 1])
     with col_b:
-        st.markdown("## ⚡ Elec Calc")
+        st.markdown("## ⚡ CableCalc")
         pwd = st.text_input("Password", type="password")
         if st.button("Log in", use_container_width=True):
             if pwd == st.secrets.get("password", ""):
@@ -314,8 +314,8 @@ def render_sizing_rows(rows):
 # SIDEBAR
 if os.path.exists("logo.png"):
     st.sidebar.image("logo.png", use_container_width=True)
-st.sidebar.markdown("## ⚡ Elec Calc")
-st.sidebar.caption("Engineering Tools")
+st.sidebar.markdown("## ⚡ CableCalc")
+st.sidebar.caption("Design Tools")
 module = st.sidebar.radio("", [
     "1. Short Circuit", "2. Cable Sizing", "3. Voltage Drop",
     "4. Cable Capacity", "5. Parallel Cable Load", "6. Converter", "7. Battery / UPS"
