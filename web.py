@@ -124,9 +124,16 @@ def show_table_dialog(ins, cond, mat, const_):
         st.warning(f"Image not found: **{path}**  —  place it in the same folder as elec_calc.py")
 
 def cross_check_button(ins, cond, mat, const_, key):
-    """Small button that opens the source table popup."""
-    if st.button("📋 View source table", key=key, help="Open the DS 60364 reference table for these parameters"):
-        show_table_dialog(ins, cond, mat, const_)
+    """Save params to session_state — button is rendered OUTSIDE the calculate block."""
+    st.session_state[f"cc_params_{key}"] = (ins, cond, mat, const_)
+
+def render_cross_check_button(key):
+    """Call this OUTSIDE if st.button('GET CAPACITY') so it survives reruns."""
+    params = st.session_state.get(f"cc_params_{key}")
+    if params:
+        if st.button("📋 View source table", key=f"btn_{key}",
+                     help="Open the DS 60364 reference table for these parameters"):
+            show_table_dialog(*params)
 
 def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multicore"):
     if construction == "Single Wire":
@@ -671,9 +678,10 @@ elif module == "4. Cable Capacity":
                         ax.set_ylabel("Iz [A]", fontsize=8)
                         ax.set_title(f"Capacity — {sect_a} mm² {mat_a} {ins_a} {const_a}", fontsize=9, fontweight="bold")
                         plt.tight_layout(); st.pyplot(fig, use_container_width=False)
-                        cross_check_button(ins_a, cond_a, mat_a, const_a, key="cc_mod4_single")
+                        cross_check_button(ins_a, cond_a, mat_a, const_a, key="m4s")
             except Exception as e:
                 st.error(f"Error: {e}")
+        render_cross_check_button("m4s")
 
     else:  # Compare two scenarios
         sc1, sc2 = st.columns(2)
@@ -693,11 +701,11 @@ elif module == "4. Cable Capacity":
                 with col_a:
                     st.markdown(f"### 🅐  {mat_a} / {ins_a} / {const_a} / {sect_a} mm²")
                     render_capacity_rows(rows_a)
-                    cross_check_button(ins_a, cond_a, mat_a, const_a, key="cc_mod4_cmp_a")
+                    cross_check_button(ins_a, cond_a, mat_a, const_a, key="m4ca")
                 with col_b:
                     st.markdown(f"### 🅑  {mat_b} / {ins_b} / {const_b} / {sect_b} mm²")
                     render_capacity_rows(rows_b)
-                    cross_check_button(ins_b, cond_b, mat_b, const_b, key="cc_mod4_cmp_b")
+                    cross_check_button(ins_b, cond_b, mat_b, const_b, key="m4cb")
 
                 valid_a = {m: v for m, v in rows_a if v is not None}
                 valid_b = {m: v for m, v in rows_b if v is not None}
@@ -734,6 +742,9 @@ elif module == "4. Cable Capacity":
                             results={"A": f"{first_a:.0f}A", "B": f"{first_b:.0f}A"})
             except Exception as e:
                 st.error(f"Error: {e}")
+        col_r1, col_r2 = st.columns(2)
+        with col_r1: render_cross_check_button("m4ca")
+        with col_r2: render_cross_check_button("m4cb")
 
     show_history("4. Cable Capacity")
 
@@ -801,9 +812,10 @@ elif module == "5. Parallel Cable Load":
                 ax.set_xticklabels([f"C{i+1}\n{cable_inputs[i]['S']} mm²" for i in range(len(valid))], fontsize=7)
                 ax.set_ylabel("Current [A]", fontsize=8); ax.set_title("Load vs. Capacity", fontsize=9, fontweight="bold")
                 ax.legend(fontsize=7); plt.tight_layout(); st.pyplot(fig, use_container_width=False)
-                cross_check_button(v_ins, 3, v_mat, v_const, key="cc_mod5")
+                cross_check_button(v_ins, 3, v_mat, v_const, key="m5")
         except Exception as e:
             st.error(f"Error: {e}")
+        render_cross_check_button("m5")
     show_history("5. Parallel Cable Load")
 
 
