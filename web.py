@@ -58,7 +58,19 @@ if not check_password():
 # Single Wire Al: all methods start from 16 mm²
 # ─────────────────────────────────────────────────────────────
 SECTIONS = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240, 300]
-
+# Short labels for chart x-axes
+SHORT_M = {
+    "Cable Tray (E)":                              "Tray (E)",
+    "Cable Tray (F)":                              "Tray (F)",
+    "Trefoil (F)":                                 "Trefoil (F)",
+    "In Conduit (B1)":                             "Conduit B1",
+    "In Conduit (B2)":                             "Conduit B2",
+    "Pipe in Ground (D1)":                         "Ground D1",
+    "Direct in Ground (D2)":                       "Ground D2",
+    "Single layer with distance - horizontal (G)": "Horiz. (G)",
+    "Single layer with distance - vertical (G)":   "Vert. (G)",
+}
+def short_m(m): return SHORT_M.get(m, m)
 def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multicore"):
     if construction == "Single Wire":
         if material == "Al":
