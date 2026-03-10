@@ -912,7 +912,7 @@ elif module == "7. Battery / UPS":
         with col1:
             ah_per_h=st.number_input("Load consumption [Ah/h]",value=10.0,min_value=0.1)
             t_auto=st.number_input("Required autonomy [h]",value=5.0,min_value=0.1)
-            v_sys=st.selectbox("System voltage [V]",[12,24,48,120,230],index=2)
+            v_sys=st.selectbox("System voltage [V]",[12,24,48,120,230,400],index=2)
         with col2:
             eta=st.number_input("UPS efficiency [%]",value=90.0,min_value=50.0,max_value=100.0)
             dod=st.number_input("Depth of Discharge DoD [%]",value=80.0,min_value=10.0,max_value=100.0)
