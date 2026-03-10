@@ -945,4 +945,4 @@ elif module == "7. Battery / UPS":
 
 
 st.markdown("---")
-st.caption("⚠️ Legal Disclaimer: Elec Calc is an estimation tool and does not replace professional design software or official standards.")
+st.caption("⚠️ Legal Disclaimer: This is an estimation tool and does not replace professional design software or official standards.")
