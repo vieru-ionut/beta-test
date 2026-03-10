@@ -73,7 +73,8 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
                 else:
                     return {
                         "Trefoil (F)":        [0,0,0,0,0,0, 84,105,128,166,203,237,274,315,375,434],
- 			"Single layer with distance (G)":        [0,0,0,0,0,0,112,139,169,217,265,308,356,407,482,557],
+ 			"Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,112,139,169,217,265,308,356,407,482,557],
+			"Single layer with distance - vertical (G)":        [0,0,0,0,0,0,99,124,152,196,241,282,327,376,447,519],
                         "In Conduit (B1)":       [0,16.5,22,28,39,53,70,86,104,133,161,186,204,230,269,306],
                         "Pipe in Ground (D1)":   [0, 18.5, 24, 30, 39, 50, 64, 77, 91, 112, 132, 150, 169, 190, 218, 247],
                         "Direct in Ground (D2)": [0, 0, 0, 0, 0, 53, 69, 83, 99, 122, 148, 169, 189, 214, 250, 282],
@@ -89,7 +90,8 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
                 else:
                     return {
                         "Trefoil (F)":        [0,0,0,0,0,0, 103,129,159,206,253,296,343,395,471,547],
- 			"Single layer with distance (G)":        [0,0,0,0,0,0,138,172,210,271,332,387,448,515,611,708],
+ 			"Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,138,172,210,271,332,387,448,515,611,708],
+			"Single layer with distance - vertical (G)":        [0,0,0,0,0,0,122,153,188,244,300,351,408,470,561,652],
                         "In Conduit (B1)":       [0,22,29,38,52, 71, 93,116,140,179,217,251,267,300,351,402],
                         "Pipe in Ground (D1)":   [0, 22, 28, 35, 46, 59, 75, 90, 106, 130, 154, 174, 197, 220, 253, 286],
                         "Direct in Ground (D2)": [0, 0, 0, 0, 0, 64, 82, 98, 117, 144, 172, 197, 220, 250, 290, 326],
@@ -106,7 +108,8 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
             else:
                 return {
                     "Trefoil (F)":        [0,0,0,0,0,0, 110,137,167,216,264,308,356,409,485,561],
- 		    "Single layer with distance (G)":        [0,0,0,0,0,0,146,181,219,281,341,396,456,521,615,709],
+ 		    "Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,146,181,219,281,341,396,456,521,615,709],
+ 		    "Single layer with distance - vertical (G)":        [0,0,0,0,0,0,130,162,197,254,311,362,419,480,569,659],
                     "In Conduit (B1)":       [16, 22, 30, 38, 52,  68,  89, 110, 132, 166, 199, 230, 258, 295, 346, 396],
                     "Pipe in Ground (D1)":   [18, 24, 30, 38, 50,  64,  82,  98, 116, 143, 169, 192, 217, 243, 280, 316],
                     "Direct in Ground (D2)": [19, 24, 33, 41, 54,  70,  92, 110, 130, 162, 193, 220, 246, 278, 320, 359],
@@ -122,7 +125,8 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
             else:
                 return {
                     "Trefoil (F)":        [0,0,0,0,0,0, 135,169,207,268,328,383,444,510,607,703],
- 		    "Single layer with distance (G)":        [0,0,0,0,0,0,182,226,275,353,430,500,577,661,781,902],
+ 		    "Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,182,226,275,353,430,500,577,661,781,902],
+		    "Single layer with distance - vertical (G)":        [0,0,0,0,0,0,161,201,246,318,389,454,527,605,719,833],
                     "In Conduit (B1)":       [20, 28, 37, 47,  64,  84, 111, 136, 164, 207, 248, 286, 324, 370, 439, 507],
                     "Pipe in Ground (D1)":   [21, 28, 36, 44,  58,  75,  96, 115, 135, 167, 197, 223, 251, 281, 324, 365],
                     "Direct in Ground (D2)": [23, 30, 39, 49,  65,  84, 107, 129, 153, 188, 226, 257, 287, 324, 375, 419],
