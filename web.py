@@ -37,6 +37,17 @@ def check_password():
     col_a, col_b, col_c = st.columns([1, 2, 1])
     with col_b:
         st.markdown("## ⚡ CableCalc")
+
+		# --- PANOU WHAT'S NEW ---
+        st.info("""
+        **✨ What's new in Version 2.0:**
+        * **New Module:** Battery & UPS sizing calculator.
+        * **Scenario Comparison:** Compare Cable A vs Cable B side-by-side.
+        * **Calculation History:** Automatically saves your last 10 results.
+        * **Expanded DB:** Full DS 60364 support for Aluminum & Single Wire.
+        * **Visuals:** Added charts and dynamic graphs for all modules.
+        """)
+		
         pwd = st.text_input("Password", type="password")
         if st.button("Log in", use_container_width=True):
             if pwd == st.secrets.get("password", ""):
