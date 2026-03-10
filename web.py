@@ -315,7 +315,7 @@ def render_sizing_rows(rows):
 if os.path.exists("logo.png"):
     st.sidebar.image("logo.png", use_container_width=True)
 st.sidebar.markdown("## ⚡ Elec Calc")
-st.sidebar.caption("DS 60364 — Engineering Tools")
+st.sidebar.caption("Engineering Tools")
 module = st.sidebar.radio("", [
     "1. Short Circuit", "2. Cable Sizing", "3. Voltage Drop",
     "4. Cable Capacity", "5. Parallel Cable Load", "6. Converter", "7. Battery / UPS"
@@ -945,4 +945,4 @@ elif module == "7. Battery / UPS":
 
 
 st.markdown("---")
-st.caption("⚡ Elec Calc  ·  DS 60364  ·  Built by Ionut Vieru")
+st.caption("⚡  ·  Built by Ionut Vieru")
