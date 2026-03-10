@@ -41,11 +41,9 @@ def check_password():
 		# --- PANOU WHAT'S NEW ---
         st.info("""
         **✨ What's new in Version 2.0:**
-        * **New Module:** Battery & UPS sizing calculator.
+        * **New Module:** Battery & UPS sizing calculator.(beta)
         * **Scenario Comparison:** Compare Cable A vs Cable B side-by-side.
-        * **Calculation History:** Automatically saves your last 10 results.
-        * **Expanded DB:** Full DS 60364 support for Aluminum & Single Wire.
-        * **Visuals:** Added charts and dynamic graphs for all modules.
+        * **Expanded DB:** Support for Single Wire installation.
         """)
 		
         pwd = st.text_input("Password", type="password")
