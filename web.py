@@ -5,7 +5,7 @@ import os
 
 # PAGE CONFIG
 st.set_page_config(
-    page_title="CableCalc",
+    page_title="Electrical Calculator",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -36,13 +36,7 @@ def check_password():
         return True
     col_a, col_b, col_c = st.columns([1, 2, 1])
     with col_b:
-        st.markdown("## ⚡ CableCalc")
-        st.info("""
-        **✨ What's new in Version 2.0:**
-        * **New Module:** Battery & UPS sizing calculator.(beta)
-        * **Scenario Comparison:** Compare Cable A vs Cable B side-by-side.
-        * **Expanded DB:** Support for Single Wire installation.
-        """)
+        st.markdown("## ⚡ Elec Calc")
         pwd = st.text_input("Password", type="password")
         if st.button("Log in", use_container_width=True):
             if pwd == st.secrets.get("password", ""):
@@ -64,7 +58,6 @@ if not check_password():
 # Single Wire Al: all methods start from 16 mm²
 # ─────────────────────────────────────────────────────────────
 SECTIONS = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240, 300]
-
 # Short labels for chart x-axes
 SHORT_M = {
     "Cable Tray (E)":                              "Tray (E)",
@@ -78,108 +71,57 @@ SHORT_M = {
     "Single layer with distance - vertical (G)":   "Vert. (G)",
 }
 def short_m(m): return SHORT_M.get(m, m)
-
-# ─────────────────────────────────────────────────────────────
-# CROSS-CHECK: source table popup
-# Images must be placed in the app folder with the naming:
-#   table_B522_Cu_PVC_2c.png   (Multicore, Cu, PVC, 2 conductors)
-#   table_B522_Cu_PVC_3c.png
-#   table_B522_Cu_XLPE_2c.png
-#   table_B522_Cu_XLPE_3c.png
-#   table_B522_Al_PVC_2c.png   (etc.)
-#   table_B522_Al_PVC_3c.png
-#   table_B522_Al_XLPE_2c.png
-#   table_B522_Al_XLPE_3c.png
-#   table_B523_Cu_PVC_2c.png   (Single Wire)
-#   table_B523_Cu_PVC_3c.png
-#   table_B523_Cu_XLPE_2c.png
-#   table_B523_Cu_XLPE_3c.png
-#   table_B523_Al_PVC_2c.png
-#   table_B523_Al_PVC_3c.png
-#   table_B523_Al_XLPE_2c.png
-#   table_B523_Al_XLPE_3c.png
-# ─────────────────────────────────────────────────────────────
-def get_table_image_path(ins, cond, mat, const_):
-    # Multicore (pages 38-41): Al+Cu on same page, split by ins+cond
-    # Single Wire (pages 46-49): split by ins+mat (2c+3c on same page)
-    if const_ == "Multicore":
-        if ins == "PVC":
-            return "p38.png" if cond == 2 else "p40.png"
-        else:  # XLPE
-            return "p39.png" if cond == 2 else "p41.png"
-    else:  # Single Wire
-        if ins == "PVC":
-            return "p46.png" if mat == "Cu" else "p47.png"
-        else:  # XLPE
-            return "p48.png" if mat == "Cu" else "p49.png"
-
-@st.dialog("📋 DS 60364 — Source Table", width="large")
-def show_table_dialog(ins, cond, mat, const_):
-    path = get_table_image_path(ins, cond, mat, const_)
-    tbl  = "B.52.2" if const_ == "Multicore" else "B.52.3"
-    st.caption(f"Table {tbl} · {mat} · {ins} · {cond} loaded conductors · {const_}  —  **{path}**")
-    if os.path.exists(path):
-        st.image(path, use_container_width=True)
-    else:
-        st.warning(f"Image not found: **{path}**  —  place it in the same folder as elec_calc.py")
-
-def cross_check_button(ins, cond, mat, const_, key):
-    """Save params to session_state — button is rendered OUTSIDE the calculate block."""
-    st.session_state[f"cc_params_{key}"] = (ins, cond, mat, const_)
-
-def render_cross_check_button(key):
-    """Call this OUTSIDE if st.button('GET CAPACITY') so it survives reruns."""
-    params = st.session_state.get(f"cc_params_{key}")
-    if params:
-        if st.button("📋 View source table", key=f"btn_{key}",
-                     help="Open the DS 60364 reference table for these parameters"):
-            show_table_dialog(*params)
-
 def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multicore"):
     if construction == "Single Wire":
         if material == "Al":
             if insulation == "PVC":
                 if loaded_cond == 2:
                     return {
-                        "Cable Tray (E)":        [0,0,0,0,0, 82.7,110.0,134.9,163.8,209.8,255.8,298.0,344.0,394.7,467.2,540.5],
-                        "In Conduit (B1)":       [0,25,33,43,59, 79, 105,130,157,200,242,281,307,351,412,471],
-                        "Pipe in Ground (D1)":   [0,0,0,0,0, 60.8, 77.2, 92.8,109.2,134.9,159.1,180.2,203.6,227.8,262.1,295.6],
-                        "Direct in Ground (D2)": [0,0,0,0,0, 64.7, 85.8,103.0,121.7,149.8,179.4,203.6,228.5,258.2,298.0,333.1],
+                        "Cable Tray (F)":        [0,0,0,0,0,0,98,122,149,192,235,273,316,363,430,467],
+                        "In Conduit (B1)":       [0,18.5,25,32,44,60,79,97,118,150,181,210,234,266,312,358],
+                        "Pipe in Ground (D1)":   [0, 22, 29, 36, 47, 61, 77,  93, 109, 135, 159, 180, 204, 228, 262, 296],
+                        "Direct in Ground (D2)": [0, 0, 0, 0, 0, 63, 82, 98, 117, 145, 173, 200, 224, 255, 298, 336],
                     }
                 else:
                     return {
-                        "Cable Tray (E)":        [0,0,0,0,0, 73.3, 95.2,117.0,142.0,181.0,218.4,252.7,290.2,331.5,390.0,449.3],
-                        "In Conduit (B1)":       [0,0,0,0,0, 53.0, 69.4, 85.8,103.0,129.5,155.2,179.4,201.2,230.1,269.9,308.9],
-                        "Pipe in Ground (D1)":   [0,0,0,0,0, 49.9, 64.0, 76.4, 90.5,111.5,131.8,149.8,169.3,189.5,218.4,246.5],
-                        "Direct in Ground (D2)": [0,0,0,0,0, 54.6, 71.8, 85.8,101.4,126.4,150.5,171.6,191.9,216.8,249.6,280.0],
+                        "Trefoil (F)":        [0,0,0,0,0,0, 84,105,128,166,203,237,274,315,375,434],
+ 			"Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,112,139,169,217,265,308,356,407,482,557],
+			"Single layer with distance - vertical (G)":        [0,0,0,0,0,0,99,124,152,196,241,282,327,376,447,519],
+                        "In Conduit (B1)":       [0,16.5,22,28,39,53,70,86,104,133,161,186,204,230,269,306],
+                        "Pipe in Ground (D1)":   [0, 18.5, 24, 30, 39, 50, 64, 77, 91, 112, 132, 150, 169, 190, 218, 247],
+                        "Direct in Ground (D2)": [0, 0, 0, 0, 0, 53, 69, 83, 99, 122, 148, 169, 189, 214, 250, 282],
                     }
             else:  # XLPE
                 if loaded_cond == 2:
                     return {
-                        "Cable Tray (E)":        [0,0,0,0,0, 97.5,129.5,159.1,194.2,248.8,301.9,350.2,404.8,462.5,546.0,630.2],
-                        "In Conduit (B1)":       [0,0,0,0,0, 74.9, 99.1,120.9,145.1,184.9,220.7,254.3,286.3,327.6,390.0,450.8],
-                        "Pipe in Ground (D1)":   [0,0,0,0,0, 71.0, 90.5,108.4,127.9,158.3,186.4,211.4,238.7,267.5,308.1,347.9],
-                        "Direct in Ground (D2)": [0,0,0,0,0, 78.0,100.6,120.9,142.7,175.5,210.6,238.7,267.5,301.9,349.4,391.6],
+                        "Cable Tray (F)":        [0,0,0,0,0, 0,121,150,184,237,289,337,389,447,530,613],
+                        "In Conduit (B1)":       [0,25,33,43,59, 79, 105,130,157,200,242,281,207,351,412,471],
+                        "Pipe in Ground (D1)":   [0, 26, 33, 42, 55, 71, 90, 108, 128, 158, 186, 211, 238, 267, 307, 346],
+                        "Direct in Ground (D2)": [0, 0, 0, 0, 0, 76.0, 98, 117, 139, 170, 204, 223, 261, 296, 343, 386],
                     }
                 else:
                     return {
-                        "Cable Tray (E)":        [0,0,0,0,0, 85.8,112.3,138.8,168.5,215.3,260.5,301.1,346.3,395.5,467.2,540.5],
-                        "In Conduit (B1)":       [0,0,0,0,0, 65.5, 86.6,106.1,127.9,161.5,193.4,223.1,252.7,288.6,342.4,395.5],
-                        "Pipe in Ground (D1)":   [0,0,0,0,0, 58.5, 74.9, 89.7,105.3,130.3,153.7,173.9,195.8,219.2,252.7,284.7],
-                        "Direct in Ground (D2)": [0,0,0,0,0, 65.5, 83.5,100.6,119.3,146.6,176.3,200.5,223.9,252.7,292.5,326.8],
+                        "Trefoil (F)":        [0,0,0,0,0,0, 103,129,159,206,253,296,343,395,471,547],
+ 			"Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,138,172,210,271,332,387,448,515,611,708],
+			"Single layer with distance - vertical (G)":        [0,0,0,0,0,0,122,153,188,244,300,351,408,470,561,652],
+                        "In Conduit (B1)":       [0,22,29,38,52, 71, 93,116,140,179,217,251,267,300,351,402],
+                        "Pipe in Ground (D1)":   [0, 22, 28, 35, 46, 59, 75, 90, 106, 130, 154, 174, 197, 220, 253, 286],
+                        "Direct in Ground (D2)": [0, 0, 0, 0, 0, 64, 82, 98, 117, 144, 172, 197, 220, 250, 290, 326],
                     }
         # Cu Single Wire
         if insulation == "PVC":
             if loaded_cond == 2:
                 return {
-                    "Cable Tray (E)":        [22, 30, 40, 51, 70, 106, 141, 173, 210, 269, 328, 382, 441, 506, 599, 693],
+                    "Cable Tray (F)":        [0, 0, 0, 0, 0, 0, 131, 162, 196, 251, 304, 352, 406, 463, 546, 629],
                     "In Conduit (B1)":       [19, 27, 36, 46, 63,  83, 108, 133, 161, 202, 242, 278, 312, 359, 422, 485],
-                    "Pipe in Ground (D1)":   [22, 29, 37, 46, 60,  78,  99, 119, 140, 173, 204, 231, 261, 292, 336, 379],
-                    "Direct in Ground (D2)": [22, 28, 38, 48, 64,  83, 110, 132, 156, 192, 230, 261, 293, 331, 382, 427],
+                    "Pipe in Ground (D1)":   [22,29,37,46,60, 78, 99,119,140,173,204,231,261,292,336,379],
+                    "Direct in Ground (D2)": [22,28,38,48,64, 83,110,132,156,192,230,261,293,331,382,427],
                 }
             else:
                 return {
-                    "Cable Tray (E)":        [19, 26, 35, 45, 62,  94, 122, 150, 182, 232, 280, 324, 372, 425, 500, 576],
+                    "Trefoil (F)":        [0,0,0,0,0,0, 110,137,167,216,264,308,356,409,485,561],
+ 		    "Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,146,181,219,281,341,396,456,521,615,709],
+ 		    "Single layer with distance - vertical (G)":        [0,0,0,0,0,0,130,162,197,254,311,362,419,480,569,659],
                     "In Conduit (B1)":       [16, 22, 30, 38, 52,  68,  89, 110, 132, 166, 199, 230, 258, 295, 346, 396],
                     "Pipe in Ground (D1)":   [18, 24, 30, 38, 50,  64,  82,  98, 116, 143, 169, 192, 217, 243, 280, 316],
                     "Direct in Ground (D2)": [19, 24, 33, 41, 54,  70,  92, 110, 130, 162, 193, 220, 246, 278, 320, 359],
@@ -187,14 +129,16 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
         else:  # XLPE
             if loaded_cond == 2:
                 return {
-                    "Cable Tray (E)":        [26, 36, 49, 63,  86, 125, 166, 204, 249, 319, 387, 449, 519, 593, 700, 808],
+                    "Cable Tray (F)":        [0, 0, 0, 0,  0, 0, 161, 200, 242, 310, 377, 437, 504, 575, 679, 783],
                     "In Conduit (B1)":       [23, 32, 42, 54,  73,  96, 127, 155, 186, 237, 283, 326, 367, 420, 500, 578],
                     "Pipe in Ground (D1)":   [25, 33, 43, 53,  71,  91, 116, 139, 164, 203, 239, 271, 306, 343, 395, 446],
                     "Direct in Ground (D2)": [27, 35, 46, 58,  77, 100, 129, 155, 183, 225, 270, 306, 343, 387, 448, 502],
                 }
             else:
                 return {
-                    "Cable Tray (E)":        [23, 31, 42, 54,  75, 110, 144, 178, 216, 276, 334, 386, 444, 507, 599, 693],
+                    "Trefoil (F)":        [0,0,0,0,0,0, 135,169,207,268,328,383,444,510,607,703],
+ 		    "Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,182,226,275,353,430,500,577,661,781,902],
+		    "Single layer with distance - vertical (G)":        [0,0,0,0,0,0,161,201,246,318,389,454,527,605,719,833],
                     "In Conduit (B1)":       [20, 28, 37, 47,  64,  84, 111, 136, 164, 207, 248, 286, 324, 370, 439, 507],
                     "Pipe in Ground (D1)":   [21, 28, 36, 44,  58,  75,  96, 115, 135, 167, 197, 223, 251, 281, 324, 365],
                     "Direct in Ground (D2)": [23, 30, 39, 49,  65,  84, 107, 129, 153, 188, 226, 257, 287, 324, 375, 419],
@@ -236,7 +180,7 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
     if insulation == "PVC":
         if loaded_cond == 2:
             return {
-                "Cable Tray (E)":        [22, 30, 40, 51, 70, 94, 119, 148, 180, 232, 282, 328, 379, 434, 514, 593],
+                "Cable Tray (E)":        [22,16.5,22,22,70, 94,119,148,180,232,282,328,379,434,514,593],
                 "In Conduit (B2)":       [16.5,23,30,38,52, 69, 90,111,133,168,201,232,258,294,344,394],
                 "Pipe in Ground (D1)":   [22,29,37,46,60, 78, 99,119,140,173,204,231,261,292,336,379],
                 "Direct in Ground (D2)": [22,28,38,48,64, 83,110,132,156,192,230,261,293,331,382,427],
@@ -263,6 +207,7 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
                 "Pipe in Ground (D1)":   [21,28,36,44,58, 75, 96,115,135,167,197,223,251,281,324,365],
                 "Direct in Ground (D2)": [23,30,39,49,65, 84,107,129,153,188,226,257,287,324,375,419],
             }
+
 
 
 # HISTORY
@@ -369,8 +314,8 @@ def render_sizing_rows(rows):
 # SIDEBAR
 if os.path.exists("logo.png"):
     st.sidebar.image("logo.png", use_container_width=True)
-st.sidebar.markdown("## ⚡ CableCalc")
-st.sidebar.caption("Design Tools")
+st.sidebar.markdown("## ⚡ Elec Calc")
+st.sidebar.caption("DS 60364 — Engineering Tools")
 module = st.sidebar.radio("", [
     "1. Short Circuit", "2. Cable Sizing", "3. Voltage Drop",
     "4. Cable Capacity", "5. Parallel Cable Load", "6. Converter", "7. Battery / UPS"
@@ -628,60 +573,52 @@ elif module == "4. Cable Capacity":
         return sect, mat, const_, ins, cond
 
     def capacity_calc(sect, mat, const_, ins, cond):
-        """Return list of (label, value_or_None). None = not available for this section."""
+        """Return (cap_labels, cap_vals) or raises."""
         if mat == "Al" and const_ == "Single Wire" and sect < 16:
             st.warning("Single Wire Al < 16 mm² — not permitted per DS 60364.")
-            return []
+            return [], []
         if mat == "Al" and const_ == "Multicore" and sect < 2.5:
             st.warning("Al < 2.5 mm² — not available.")
-            return []
+            return [], []
         idx     = SECTIONS.index(sect)
         methods = get_ds60364_data(ins, cond, mat, const_)
-        return [(m, v[idx] if v[idx] > 0 else None) for m, v in methods.items()]
+        labels, vals = [], []
+        for m, v in methods.items():
+            cap = v[idx]
+            if cap > 0:
+                labels.append(m); vals.append(cap)
+        return labels, vals
 
-    def render_capacity_rows(rows):
-        for m, cap in rows:
-            if cap is not None:
-                st.markdown(f"""<div class="method-row">
-                    <span class="method-name">{m}</span>
-                    <span class="method-section">{cap:.1f} A</span>
-                    </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown(f"""<div class="method-row">
-                    <span class="method-name">{m}</span>
-                    <span class="method-section" style="color:#bbb">—</span>
-                    <span class="method-cap" style="color:#bbb;font-size:12px;">min 25 mm² for this method</span>
-                    </div>""", unsafe_allow_html=True)
+    def render_capacity_rows(labels, vals):
+        for m, cap in zip(labels, vals):
+            st.markdown(f"""<div class="method-row">
+                <span class="method-name">{m}</span>
+                <span class="method-section">{cap:.1f} A</span>
+                </div>""", unsafe_allow_html=True)
 
     if mode == "Single calculation":
         sect_a, mat_a, const_a, ins_a, cond_a = capacity_inputs("a")
         if st.button("GET CAPACITY", type="primary"):
             try:
-                rows_a = capacity_calc(sect_a, mat_a, const_a, ins_a, cond_a)
-                if rows_a:
-                    render_capacity_rows(rows_a)
-                    # Only chart methods with actual values
-                    valid_a = [(m, v) for m, v in rows_a if v is not None]
-                    if valid_a:
-                        labels_a, vals_a = zip(*valid_a)
-                        add_to_history("4. Cable Capacity",
-                            params={"S": f"{sect_a}mm²","Mat": mat_a,"Ins": ins_a,"Cond": cond_a,"Constr": const_a},
-                            results={labels_a[0]: f"{vals_a[0]:.1f}A"})
-                        fig, ax = make_fig(5, 2.5)
-                        colors_bar = ["#1976d2","#388e3c","#f57c00","#7b1fa2","#c62828","#00838f"]
-                        x_pos = np.arange(len(labels_a))
-                        bars = ax.bar(x_pos, vals_a, color=colors_bar[:len(labels_a)], alpha=0.8, edgecolor="white")
-                        for bar, val in zip(bars, vals_a):
-                            ax.text(bar.get_x()+bar.get_width()/2, bar.get_height()+1, f"{val:.0f}A", ha="center", va="bottom", fontsize=7)
-                        ax.set_xticks(x_pos)
-                        ax.set_xticklabels([short_m(m) for m in labels_a], fontsize=7, rotation=30, ha="right")
-                        ax.set_ylabel("Iz [A]", fontsize=8)
-                        ax.set_title(f"Capacity — {sect_a} mm² {mat_a} {ins_a} {const_a}", fontsize=9, fontweight="bold")
-                        plt.tight_layout(); st.pyplot(fig, use_container_width=False)
-                        cross_check_button(ins_a, cond_a, mat_a, const_a, key="m4s")
+                labels_a, vals_a = capacity_calc(sect_a, mat_a, const_a, ins_a, cond_a)
+                if vals_a:
+                    render_capacity_rows(labels_a, vals_a)
+                    add_to_history("4. Cable Capacity",
+                        params={"S": f"{sect_a}mm²","Mat": mat_a,"Ins": ins_a,"Cond": cond_a,"Constr": const_a},
+                        results={labels_a[0]: f"{vals_a[0]:.1f}A", labels_a[1]: f"{vals_a[1]:.1f}A"})
+                    fig, ax = make_fig(5, 2.5)
+                    colors_bar = ["#1976d2","#388e3c","#f57c00","#7b1fa2","#c62828","#00838f"]
+                    x_pos = np.arange(len(labels_a))
+                    bars = ax.bar(x_pos, vals_a, color=colors_bar[:len(labels_a)], alpha=0.8, edgecolor="white")
+                    for bar, val in zip(bars, vals_a):
+                        ax.text(bar.get_x()+bar.get_width()/2, bar.get_height()+1, f"{val:.0f}A", ha="center", va="bottom", fontsize=7)
+                    ax.set_xticks(x_pos)
+                    ax.set_xticklabels([short_m(m) for m in labels_a], fontsize=7, rotation=30, ha="right")
+                    ax.set_ylabel("Iz [A]", fontsize=8)
+                    ax.set_title(f"Capacity — {sect_a} mm² {mat_a} {ins_a} {const_a}", fontsize=9, fontweight="bold")
+                    plt.tight_layout(); st.pyplot(fig, use_container_width=False)
             except Exception as e:
                 st.error(f"Error: {e}")
-        render_cross_check_button("m4s")
 
     else:  # Compare two scenarios
         sc1, sc2 = st.columns(2)
@@ -694,27 +631,28 @@ elif module == "4. Cable Capacity":
 
         if st.button("GET CAPACITY", type="primary"):
             try:
-                rows_a = capacity_calc(sect_a, mat_a, const_a, ins_a, cond_a)
-                rows_b = capacity_calc(sect_b, mat_b, const_b, ins_b, cond_b)
+                labels_a, vals_a = capacity_calc(sect_a, mat_a, const_a, ins_a, cond_a)
+                labels_b, vals_b = capacity_calc(sect_b, mat_b, const_b, ins_b, cond_b)
 
                 col_a, col_b = st.columns(2)
                 with col_a:
                     st.markdown(f"### 🅐  {mat_a} / {ins_a} / {const_a} / {sect_a} mm²")
-                    render_capacity_rows(rows_a)
-                    cross_check_button(ins_a, cond_a, mat_a, const_a, key="m4ca")
+                    render_capacity_rows(labels_a, vals_a)
                 with col_b:
                     st.markdown(f"### 🅑  {mat_b} / {ins_b} / {const_b} / {sect_b} mm²")
-                    render_capacity_rows(rows_b)
-                    cross_check_button(ins_b, cond_b, mat_b, const_b, key="m4cb")
+                    render_capacity_rows(labels_b, vals_b)
 
-                valid_a = {m: v for m, v in rows_a if v is not None}
-                valid_b = {m: v for m, v in rows_b if v is not None}
-
-                if valid_a and valid_b:
+                # Comparison chart — first method in common (Cable Tray / Trefoil)
+                if vals_a and vals_b:
                     st.markdown("---")
-                    all_methods = list(dict.fromkeys(list(valid_a.keys()) + list(valid_b.keys())))
-                    v_a = [valid_a.get(m, 0) for m in all_methods]
-                    v_b = [valid_b.get(m, 0) for m in all_methods]
+                    # Build side-by-side bar chart for all methods present in both
+                    methods_a = dict(zip(labels_a, vals_a))
+                    methods_b = dict(zip(labels_b, vals_b))
+                    all_methods = list(dict.fromkeys(list(methods_a.keys()) + list(methods_b.keys())))
+                    v_a = [methods_a.get(m, 0) for m in all_methods]
+                    v_b = [methods_b.get(m, 0) for m in all_methods]
+
+                    # Shorten method labels for display
                     x_labels = [short_m(m) for m in all_methods]
                     x = np.arange(len(all_methods)); w = 0.35
                     fig, ax = make_fig(6, 2.6)
@@ -728,23 +666,19 @@ elif module == "4. Cable Capacity":
                     ax.set_title("Capacity Comparison", fontsize=9, fontweight="bold")
                     ax.legend(fontsize=7); plt.tight_layout(); st.pyplot(fig, use_container_width=False)
 
+                    # Summary winner per method
                     tray_key = all_methods[0]
-                    va0 = valid_a.get(tray_key, 0); vb0 = valid_b.get(tray_key, 0)
+                    va0 = methods_a.get(tray_key, 0); vb0 = methods_b.get(tray_key, 0)
                     if va0 and vb0:
                         winner = "🅐" if va0 >= vb0 else "🅑"
-                        st.info(f"**{tray_key}:**  🅐 {va0:.0f} A  vs  🅑 {vb0:.0f} A  —  higher: {winner}  (+{abs(va0-vb0):.0f} A)")
+                        diff   = abs(va0 - vb0)
+                        st.info(f"**{tray_key}:**  🅐 {va0:.0f} A  vs  🅑 {vb0:.0f} A  —  higher capacity: {winner}  (+{diff:.0f} A)")
 
-                    first_a = next(iter(valid_a.values()), None)
-                    first_b = next(iter(valid_b.values()), None)
-                    if first_a and first_b:
-                        add_to_history("4. Cable Capacity",
-                            params={"A": f"{mat_a}/{ins_a}/{sect_a}mm²", "B": f"{mat_b}/{ins_b}/{sect_b}mm²"},
-                            results={"A": f"{first_a:.0f}A", "B": f"{first_b:.0f}A"})
+                    add_to_history("4. Cable Capacity",
+                        params={"A": f"{mat_a}/{ins_a}/{sect_a}mm²", "B": f"{mat_b}/{ins_b}/{sect_b}mm²"},
+                        results={"A_tray": f"{vals_a[0]:.0f}A", "B_tray": f"{vals_b[0]:.0f}A"})
             except Exception as e:
                 st.error(f"Error: {e}")
-        col_r1, col_r2 = st.columns(2)
-        with col_r1: render_cross_check_button("m4ca")
-        with col_r2: render_cross_check_button("m4cb")
 
     show_history("4. Cable Capacity")
 
@@ -812,10 +746,8 @@ elif module == "5. Parallel Cable Load":
                 ax.set_xticklabels([f"C{i+1}\n{cable_inputs[i]['S']} mm²" for i in range(len(valid))], fontsize=7)
                 ax.set_ylabel("Current [A]", fontsize=8); ax.set_title("Load vs. Capacity", fontsize=9, fontweight="bold")
                 ax.legend(fontsize=7); plt.tight_layout(); st.pyplot(fig, use_container_width=False)
-                cross_check_button(v_ins, 3, v_mat, v_const, key="m5")
         except Exception as e:
             st.error(f"Error: {e}")
-        render_cross_check_button("m5")
     show_history("5. Parallel Cable Load")
 
 
@@ -1013,5 +945,4 @@ elif module == "7. Battery / UPS":
 
 
 st.markdown("---")
-st.markdown("---")
-st.caption("⚠️ Legal Disclaimer: This is an estimation tool and does not replace professional design software or official standards.")
+st.caption("⚡ Elec Calc  ·  DS 60364  ·  Built by Ionut Vieru")
