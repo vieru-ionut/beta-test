@@ -539,52 +539,126 @@ elif module == "3. Voltage Drop":
     show_history("3. Voltage Drop")
 
 
-# ═══════════════════════════════════
-# MODULE 4 — CABLE CAPACITY
-# ═══════════════════════════════════
 elif module == "4. Cable Capacity":
     st.markdown("# 📊 Cable Capacity (Iz)")
     st.markdown("---")
-    col1, col2 = st.columns(2)
-    with col1:
-        sel_sect = st.selectbox("Cross-Section [mm2]", SECTIONS, index=5)
-        v_mat    = st.radio("Material",           ["Cu","Al"],                     help=tip("cu_vs_al"))
-        v_const  = st.radio("Cable Construction", ["Multicore","Single Wire"],     help=tip("construction"))
-    with col2:
-        v_ins  = st.radio("Insulation",        ["XLPE","PVC"],  help=tip("xlpe_vs_pvc"))
-        v_cond = st.radio("Loaded Conductors", [3, 2])
-    if st.button("GET CAPACITY", type="primary"):
-        try:
-            if v_mat == "Al" and v_const == "Single Wire" and sel_sect < 16:
-                st.warning("Single Wire Al < 16 mm² — not permitted per DS 60364.")
-                st.stop()
-            if v_mat == "Al" and v_const == "Multicore" and sel_sect < 2.5:
-                st.warning("Al < 2.5 mm² — not available.")
-                st.stop()
-            idx     = SECTIONS.index(sel_sect)
-            methods = get_ds60364_data(v_ins, v_cond, v_mat, v_const)
-            cap_vals, cap_labels = [], []
-            for m, vals in methods.items():
-                cap = vals[idx]
-                if cap == 0:
-                    st.warning(f"{m}: Al < 16 mm2 — N/A"); continue
-                cap_vals.append(cap); cap_labels.append(m)
-                st.markdown(f"""<div class="method-row"><span class="method-name">{m}</span>
-                    <span class="method-section">{cap:.1f} A</span></div>""", unsafe_allow_html=True)
-            if cap_vals:
-                add_to_history("4. Cable Capacity",
-                    params={"S": f"{sel_sect}mm2","Mat": v_mat,"Ins": v_ins,"Cond": v_cond,"Constr": v_const},
-                    results={cap_labels[0]: f"{cap_vals[0]:.1f}A", cap_labels[1]: f"{cap_vals[1]:.1f}A"})
-                fig, ax = make_fig(5, 2.2)
-                colors_bar = ["#1976d2","#388e3c","#f57c00","#7b1fa2"]
-                bars = ax.bar(cap_labels, cap_vals, color=colors_bar[:len(cap_labels)], alpha=0.8, edgecolor="white")
-                for bar, val in zip(bars, cap_vals):
-                    ax.text(bar.get_x()+bar.get_width()/2, bar.get_height()+1, f"{val:.0f}A", ha="center", va="bottom", fontsize=7)
-                ax.set_ylabel("Iz [A]", fontsize=8)
-                ax.set_title(f"Capacity — {sel_sect} mm2 {v_mat} {v_ins} {v_const}", fontsize=9, fontweight="bold")
-                ax.tick_params(axis="x", labelsize=7); plt.tight_layout(); st.pyplot(fig, use_container_width=False)
-        except Exception as e:
-            st.error(f"Error: {e}")
+    mode = st.radio("Mode", ["Single calculation", "Compare two scenarios"], horizontal=True, label_visibility="collapsed")
+    st.markdown("---")
+
+    def capacity_inputs(suffix):
+        col1, col2 = st.columns(2)
+        with col1:
+            sect   = st.selectbox("Cross-Section [mm²]",  SECTIONS, index=5,          key=f"sect_{suffix}")
+            mat    = st.radio("Material",           ["Cu","Al"],                        key=f"mat_{suffix}",   help=tip("cu_vs_al"))
+            const_ = st.radio("Cable Construction", ["Multicore","Single Wire"],        key=f"cst_{suffix}",   help=tip("construction"))
+        with col2:
+            ins    = st.radio("Insulation",         ["XLPE","PVC"],                     key=f"ins_{suffix}",   help=tip("xlpe_vs_pvc"))
+            cond   = st.radio("Loaded Conductors",  [3, 2],                             key=f"cond_{suffix}")
+        return sect, mat, const_, ins, cond
+
+    def capacity_calc(sect, mat, const_, ins, cond):
+        """Return (cap_labels, cap_vals) or raises."""
+        if mat == "Al" and const_ == "Single Wire" and sect < 16:
+            st.warning("Single Wire Al < 16 mm² — not permitted per DS 60364.")
+            return [], []
+        if mat == "Al" and const_ == "Multicore" and sect < 2.5:
+            st.warning("Al < 2.5 mm² — not available.")
+            return [], []
+        idx     = SECTIONS.index(sect)
+        methods = get_ds60364_data(ins, cond, mat, const_)
+        labels, vals = [], []
+        for m, v in methods.items():
+            cap = v[idx]
+            if cap > 0:
+                labels.append(m); vals.append(cap)
+        return labels, vals
+
+    def render_capacity_rows(labels, vals):
+        for m, cap in zip(labels, vals):
+            st.markdown(f"""<div class="method-row">
+                <span class="method-name">{m}</span>
+                <span class="method-section">{cap:.1f} A</span>
+                </div>""", unsafe_allow_html=True)
+
+    if mode == "Single calculation":
+        sect_a, mat_a, const_a, ins_a, cond_a = capacity_inputs("a")
+        if st.button("GET CAPACITY", type="primary"):
+            try:
+                labels_a, vals_a = capacity_calc(sect_a, mat_a, const_a, ins_a, cond_a)
+                if vals_a:
+                    render_capacity_rows(labels_a, vals_a)
+                    add_to_history("4. Cable Capacity",
+                        params={"S": f"{sect_a}mm²","Mat": mat_a,"Ins": ins_a,"Cond": cond_a,"Constr": const_a},
+                        results={labels_a[0]: f"{vals_a[0]:.1f}A", labels_a[1]: f"{vals_a[1]:.1f}A"})
+                    fig, ax = make_fig(5, 2.2)
+                    colors_bar = ["#1976d2","#388e3c","#f57c00","#7b1fa2","#c62828","#00838f"]
+                    bars = ax.bar(labels_a, vals_a, color=colors_bar[:len(labels_a)], alpha=0.8, edgecolor="white")
+                    for bar, val in zip(bars, vals_a):
+                        ax.text(bar.get_x()+bar.get_width()/2, bar.get_height()+1, f"{val:.0f}A", ha="center", va="bottom", fontsize=7)
+                    ax.set_ylabel("Iz [A]", fontsize=8)
+                    ax.set_title(f"Capacity — {sect_a} mm² {mat_a} {ins_a} {const_a}", fontsize=9, fontweight="bold")
+                    ax.tick_params(axis="x", labelsize=6); plt.tight_layout(); st.pyplot(fig, use_container_width=False)
+            except Exception as e:
+                st.error(f"Error: {e}")
+
+    else:  # Compare two scenarios
+        sc1, sc2 = st.columns(2)
+        with sc1:
+            st.caption("Scenario A")
+            sect_a, mat_a, const_a, ins_a, cond_a = capacity_inputs("a")
+        with sc2:
+            st.caption("Scenario B")
+            sect_b, mat_b, const_b, ins_b, cond_b = capacity_inputs("b")
+
+        if st.button("GET CAPACITY", type="primary"):
+            try:
+                labels_a, vals_a = capacity_calc(sect_a, mat_a, const_a, ins_a, cond_a)
+                labels_b, vals_b = capacity_calc(sect_b, mat_b, const_b, ins_b, cond_b)
+
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    st.markdown(f"### 🅐  {mat_a} / {ins_a} / {const_a} / {sect_a} mm²")
+                    render_capacity_rows(labels_a, vals_a)
+                with col_b:
+                    st.markdown(f"### 🅑  {mat_b} / {ins_b} / {const_b} / {sect_b} mm²")
+                    render_capacity_rows(labels_b, vals_b)
+
+                # Comparison chart — first method in common (Cable Tray / Trefoil)
+                if vals_a and vals_b:
+                    st.markdown("---")
+                    # Build side-by-side bar chart for all methods present in both
+                    methods_a = dict(zip(labels_a, vals_a))
+                    methods_b = dict(zip(labels_b, vals_b))
+                    all_methods = list(dict.fromkeys(list(methods_a.keys()) + list(methods_b.keys())))
+                    v_a = [methods_a.get(m, 0) for m in all_methods]
+                    v_b = [methods_b.get(m, 0) for m in all_methods]
+
+                    x = np.arange(len(all_methods)); w = 0.35
+                    fig, ax = make_fig(6, 2.4)
+                    bars_a = ax.bar(x-w/2, v_a, w, label=f"A {mat_a}/{ins_a}/{sect_a}mm²", color="#1976d2", alpha=0.85, edgecolor="white")
+                    bars_b = ax.bar(x+w/2, v_b, w, label=f"B {mat_b}/{ins_b}/{sect_b}mm²", color="#f57c00", alpha=0.85, edgecolor="white")
+                    for bar, val in list(zip(bars_a, v_a)) + list(zip(bars_b, v_b)):
+                        if val > 0:
+                            ax.text(bar.get_x()+bar.get_width()/2, bar.get_height()+1, f"{val:.0f}", ha="center", fontsize=6)
+                    ax.set_xticks(x); ax.set_xticklabels(all_methods, fontsize=6)
+                    ax.set_ylabel("Iz [A]", fontsize=8)
+                    ax.set_title("Capacity Comparison", fontsize=9, fontweight="bold")
+                    ax.legend(fontsize=7); plt.tight_layout(); st.pyplot(fig, use_container_width=False)
+
+                    # Summary winner per method
+                    tray_key = all_methods[0]
+                    va0 = methods_a.get(tray_key, 0); vb0 = methods_b.get(tray_key, 0)
+                    if va0 and vb0:
+                        winner = "🅐" if va0 >= vb0 else "🅑"
+                        diff   = abs(va0 - vb0)
+                        st.info(f"**{tray_key}:**  🅐 {va0:.0f} A  vs  🅑 {vb0:.0f} A  —  higher capacity: {winner}  (+{diff:.0f} A)")
+
+                    add_to_history("4. Cable Capacity",
+                        params={"A": f"{mat_a}/{ins_a}/{sect_a}mm²", "B": f"{mat_b}/{ins_b}/{sect_b}mm²"},
+                        results={"A_tray": f"{vals_a[0]:.0f}A", "B_tray": f"{vals_b[0]:.0f}A"})
+            except Exception as e:
+                st.error(f"Error: {e}")
+
     show_history("4. Cable Capacity")
 
 
