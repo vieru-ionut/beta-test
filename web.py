@@ -476,7 +476,15 @@ elif module == "3. Voltage Drop":
         e_curr      = st.number_input("Load Current Ib [A]", value=16.0,  min_value=0.1,  help=tip("ib"))
         cos_phi_val = st.number_input("Power Factor cos φ",  value=0.85,  min_value=0.5,  max_value=1.0, step=0.01, help=tip("cos_phi"))
     with col2:
-        v_sys = st.selectbox("System Voltage [V]", [12, 24, 48, 230, 400, 690], index=3)
+        # ── Track v_sys changes and reset v_type if needed ──────────────────
+        if "vd_prev_vsys" not in st.session_state:
+            st.session_state["vd_prev_vsys"] = None
+
+        v_sys = st.selectbox("System Voltage [V]", [12, 24, 48, 230, 400, 690], index=3, key="vd_vsys")
+
+        if st.session_state["vd_prev_vsys"] != v_sys:
+            st.session_state["vd_prev_vsys"] = v_sys
+            st.session_state.pop("vd_vtype", None)   # force radio reset
 
         # ── Restrict current type based on voltage ──────────────────────────
         if v_sys in [12, 24, 48]:
@@ -486,7 +494,7 @@ elif module == "3. Voltage Drop":
         else:  # 400, 690
             allowed_types = ["AC 3-phase", "AC 1-phase", "DC"]
 
-        v_type = st.radio("Current Type", allowed_types)
+        v_type = st.radio("Current Type", allowed_types, key="vd_vtype")
 
         # cos φ is irrelevant for DC — show a note
         if v_type == "DC":
