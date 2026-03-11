@@ -462,101 +462,248 @@ elif module == "2. Cable Sizing":
 elif module == "3. Voltage Drop":
     st.markdown("# 📉 Voltage Drop & Dimensioning")
     st.markdown("---")
-    mode = st.radio("Mode", ["Single calculation","Compare two scenarios"], horizontal=True, label_visibility="collapsed")
+
+    mode = st.radio(
+        "Mode",
+        ["Single calculation", "Compare two scenarios"],
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+
     col1, col2 = st.columns(2)
     with col1:
-        e_len  = st.number_input("Cable Length [m]",    value=50.0, help=tip("e_len"))
-        e_curr = st.number_input("Load Current Ib [A]", value=16.0, help=tip("ib"))
-        cos_phi_val = st.number_input("Power Factor cos p", value=0.85, min_value=0.5, max_value=1.0, step=0.01, help=tip("cos_phi"))
+        e_len       = st.number_input("Cable Length [m]",    value=50.0,  min_value=0.1,  help=tip("e_len"))
+        e_curr      = st.number_input("Load Current Ib [A]", value=16.0,  min_value=0.1,  help=tip("ib"))
+        cos_phi_val = st.number_input("Power Factor cos φ",  value=0.85,  min_value=0.5,  max_value=1.0, step=0.01, help=tip("cos_phi"))
     with col2:
-        v_sys  = st.selectbox("System Voltage [V]", [12,24,48,230,400,690], index=4)
-        v_type = st.radio("Current Type", ["AC 3-phase","AC 1-phase","DC"])
+        v_sys = st.selectbox("System Voltage [V]", [12, 24, 48, 230, 400, 690], index=3)
+
+        # ── Restrict current type based on voltage ──────────────────────────
+        if v_sys in [12, 24, 48]:
+            allowed_types = ["DC"]
+        elif v_sys == 230:
+            allowed_types = ["AC 1-phase", "DC"]
+        else:  # 400, 690
+            allowed_types = ["AC 3-phase", "AC 1-phase", "DC"]
+
+        v_type = st.radio("Current Type", allowed_types)
+
+        # cos φ is irrelevant for DC — show a note
+        if v_type == "DC":
+            st.caption("ℹ️ Power factor not used for DC.")
+
     st.markdown("---")
+
+    # ── Section / material inputs ────────────────────────────────────────────
     if mode == "Single calculation":
         sc1, sc2 = st.columns(2)
-        with sc1: v_mat_a = st.radio("Material", ["Cu","Al"], key="vd_mat_a", help=tip("cu_vs_al"))
-        with sc2: e_sect_a = st.number_input("Section [mm2]", value=2.5, key="vd_sect_a", help=tip("e_sect"))
+        with sc1:
+            v_mat_a  = st.radio("Conductor Material", ["Cu", "Al"], key="vd_mat_a", help=tip("cu_vs_al"))
+        with sc2:
+            e_sect_a = st.number_input("Section [mm²]", value=2.5, min_value=0.1, key="vd_sect_a", help=tip("e_sect"))
     else:
         sc1, sc2 = st.columns(2)
         with sc1:
             st.caption("Scenario A")
-            v_mat_a  = st.radio("Material A", ["Cu","Al"], key="vd_mat_a", help=tip("cu_vs_al"))
-            e_sect_a = st.number_input("Section A [mm2]", value=2.5, key="vd_sect_a", help=tip("e_sect"))
+            v_mat_a  = st.radio("Material A", ["Cu", "Al"], key="vd_mat_a", help=tip("cu_vs_al"))
+            e_sect_a = st.number_input("Section A [mm²]", value=2.5, min_value=0.1, key="vd_sect_a", help=tip("e_sect"))
         with sc2:
             st.caption("Scenario B")
-            v_mat_b  = st.radio("Material B", ["Cu","Al"], index=1, key="vd_mat_b")
-            e_sect_b = st.number_input("Section B [mm2]", value=4.0, key="vd_sect_b")
+            v_mat_b  = st.radio("Material B", ["Cu", "Al"], index=1, key="vd_mat_b")
+            e_sect_b = st.number_input("Section B [mm²]", value=4.0, min_value=0.1, key="vd_sect_b")
+
+    # ── Core calculation ─────────────────────────────────────────────────────
     def vdrop_calc(mat, sect):
-        rho = 0.0225 if mat == "Cu" else 0.036
-        if v_type == "DC": factor, cph, sph = 2, 1.0, 0.0
-        elif v_type == "AC 1-phase": factor, cph = 2, cos_phi_val; sph = np.sqrt(max(1-cos_phi_val**2, 0))
-        else: factor, cph = np.sqrt(3), cos_phi_val; sph = np.sqrt(max(1-cos_phi_val**2, 0))
-        x_l = 0.00008
-        if v_type == "DC": dV = (factor * e_len * e_curr * rho) / sect
-        else:
-            R = (rho * e_len) / sect; X = x_l * e_len
+        """
+        IEC 60364-5-52 voltage drop formula.
+        dU = factor × Ib × (R·cosφ + X·sinφ)   [AC]
+        dU = 2 × Ib × R                          [DC]
+
+        rho (resistivity at 70 °C):
+          Cu  = 0.0225 Ω·mm²/m  (~1/44 S·m/mm²)
+          Al  = 0.0360 Ω·mm²/m  (~1/28 S·m/mm²)
+        x_l (reactance, generic):
+          ≈ 0.08 mΩ/m  (suitable for common cable sections)
+        """
+        rho = 0.0225 if mat == "Cu" else 0.0360
+        x_l = 0.08e-3   # Ω/m
+
+        R = (rho * e_len) / sect   # total resistance [Ω]
+        X = x_l * e_len            # total reactance  [Ω]
+
+        if v_type == "DC":
+            factor = 2
+            cph, sph = 1.0, 0.0
+            dV = factor * e_curr * R
+        elif v_type == "AC 1-phase":
+            factor = 2
+            cph = cos_phi_val
+            sph = np.sqrt(max(1.0 - cph**2, 0.0))
             dV = factor * e_curr * (R * cph + X * sph)
-        return dV, (dV / v_sys) * 100, factor, cph
-    def req_sections(factor, cph):
-        rho = 0.0225; out = {}
-        for lim in [3,5,8]:
-            lv  = (lim/100) * v_sys
-            req = (factor * e_len * e_curr * rho * cph) / lv
+        else:  # AC 3-phase
+            factor = np.sqrt(3)
+            cph = cos_phi_val
+            sph = np.sqrt(max(1.0 - cph**2, 0.0))
+            dV = factor * e_curr * (R * cph + X * sph)
+
+        pct = (dV / v_sys) * 100
+        return dV, pct, factor, cph
+
+    def req_sections(factor, cph, mat):
+        """
+        Minimum conductor section to stay within standard limits.
+        Uses the simplified formula (reactance neglected) — conservative side.
+        """
+        rho = 0.0225 if mat == "Cu" else 0.0360
+        out = {}
+        for lim in [3, 5, 8]:
+            lv  = (lim / 100.0) * v_sys
+            # S_min = factor × Ib × rho × cosφ × L / dU_max
+            req  = (factor * e_curr * rho * cph * e_len) / lv
             match = next((s for s in SECTIONS if s >= req), None)
-            out[lim] = (req, f"{match} mm2" if match else "> 300 mm2")
+            out[lim] = (req, f"{match} mm²" if match else "> 300 mm²")
         return out
+
+    # ── Button & results ─────────────────────────────────────────────────────
     if st.button("CALCULATE VOLTAGE DROP", type="primary"):
         try:
             dV_a, pct_a, factor_a, cph_a = vdrop_calc(v_mat_a, e_sect_a)
-            color_a = "#d32f2f" if pct_a > 5 else ("#e65100" if pct_a > 3 else "#2e7d32")
+
+            def drop_color(pct):
+                if pct > 5:   return "#d32f2f"   # red
+                if pct > 3:   return "#e65100"   # orange
+                return "#2e7d32"                  # green
+
+            color_a = drop_color(pct_a)
+
+            # ── SINGLE ──────────────────────────────────────────────────────
             if mode == "Single calculation":
                 c1, c2 = st.columns(2)
-                c1.markdown(f"""<div class="result-card"><div class="label">Voltage Drop dU</div>
-                    <div class="value" style="color:{color_a};">{pct_a:.2f} %</div></div>
-                    <div class="result-card"><div class="label">Absolute drop</div>
-                    <div class="value">{dV_a:.2f} V</div></div>""", unsafe_allow_html=True)
-                lims = req_sections(factor_a, cph_a)
+
+                with c1:
+                    st.markdown(
+                        f"""
+                        <div class="result-card">
+                            <div class="label">Voltage Drop dU</div>
+                            <div class="value" style="color:{color_a};">{pct_a:.2f} %</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="label">Absolute drop</div>
+                            <div class="value">{dV_a:.2f} V</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                lims = req_sections(factor_a, cph_a, v_mat_a)
+
                 with c2:
                     st.markdown("**Min section per limit:**")
                     for lim, (req, match) in lims.items():
                         ok = "#2e7d32" if pct_a <= lim else "#e65100"
-                        st.markdown(f"""<div class="method-row"><span class="method-name">Limit {lim}%</span>
-                            <span class="method-section">{match}</span>
-                            <span class="method-cap" style="color:{ok};">req. {req:.2f} mm2</span></div>""", unsafe_allow_html=True)
+                        st.markdown(
+                            f"""
+                            <div class="method-row">
+                                <span class="method-name">Limit {lim}%</span>
+                                <span class="method-section">{match}</span>
+                                <span class="method-cap" style="color:{ok};">req. {req:.2f} mm²</span>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                # Chart
                 fig, ax = make_fig(4.5, 2)
-                ax.barh(["3%","5%","8%"], [3,5,8], color="#e0e0e0", height=0.5)
-                ax.barh(["3%","5%","8%"], [min(pct_a,3),min(pct_a,5),min(pct_a,8)], color=color_a, height=0.5, alpha=0.85)
-                ax.axvline(pct_a, color="#1976d2", lw=1.5, ls="--", label=f"dU={pct_a:.2f}%")
-                ax.set_xlabel("Voltage Drop [%]", fontsize=8); ax.set_title("Drop vs. Limits", fontsize=9, fontweight="bold")
-                ax.legend(fontsize=7); plt.tight_layout(); st.pyplot(fig, use_container_width=False)
-                add_to_history("3. Voltage Drop",
-                    params={"L": f"{e_len}m", "Ib": f"{e_curr}A", "S": f"{e_sect_a}mm2", "Mat": v_mat_a},
-                    results={"dU": f"{pct_a:.2f}%", "dV": f"{dV_a:.2f}V"})
+                limits = [3, 5, 8]
+                ax.barh(["3%", "5%", "8%"], limits, color="#e0e0e0", height=0.5)
+                ax.barh(
+                    ["3%", "5%", "8%"],
+                    [min(pct_a, l) for l in limits],
+                    color=color_a, height=0.5, alpha=0.85
+                )
+                ax.axvline(pct_a, color="#1976d2", lw=1.5, ls="--", label=f"dU = {pct_a:.2f}%")
+                ax.set_xlabel("Voltage Drop [%]", fontsize=8)
+                ax.set_title("Drop vs. Standard Limits", fontsize=9, fontweight="bold")
+                ax.legend(fontsize=7)
+                plt.tight_layout()
+                st.pyplot(fig, use_container_width=False)
+
+                # Calculation breakdown
+                with st.expander("🔍 Calculation details"):
+                    rho_a = 0.0225 if v_mat_a == "Cu" else 0.0360
+                    R_a   = (rho_a * e_len) / e_sect_a
+                    X_a   = 0.08e-3 * e_len
+                    st.markdown(
+                        f"""
+                        | Parameter | Value |
+                        |-----------|-------|
+                        | ρ ({v_mat_a}) | {rho_a} Ω·mm²/m |
+                        | R = ρ·L/S | {R_a:.4f} Ω |
+                        | X = xₗ·L  | {X_a:.4f} Ω |
+                        | cos φ     | {cos_phi_val:.2f} |
+                        | sin φ     | {np.sqrt(max(1-cos_phi_val**2,0)):.3f} |
+                        | dU        | {dV_a:.3f} V = **{pct_a:.2f}%** |
+                        """
+                    )
+
+                add_to_history(
+                    "3. Voltage Drop",
+                    params={"L": f"{e_len} m", "Ib": f"{e_curr} A", "S": f"{e_sect_a} mm²", "Mat": v_mat_a, "Type": v_type},
+                    results={"dU": f"{pct_a:.2f}%", "dV": f"{dV_a:.2f} V"}
+                )
+
+            # ── COMPARE ─────────────────────────────────────────────────────
             else:
                 dV_b, pct_b, factor_b, cph_b = vdrop_calc(v_mat_b, e_sect_b)
-                color_b = "#d32f2f" if pct_b > 5 else ("#e65100" if pct_b > 3 else "#2e7d32")
+                color_b = drop_color(pct_b)
+
                 col_a, col_b = st.columns(2)
                 with col_a:
-                    st.markdown(f"### A  {v_mat_a} / {e_sect_a} mm2")
-                    st.markdown(f"""<div class="result-card"><div class="label">dU</div>
-                        <div class="value" style="color:{color_a};">{pct_a:.2f} % ({dV_a:.2f} V)</div></div>""", unsafe_allow_html=True)
+                    st.markdown(f"### A — {v_mat_a} / {e_sect_a} mm²")
+                    st.markdown(
+                        f"""<div class="result-card">
+                            <div class="label">dU</div>
+                            <div class="value" style="color:{color_a};">{pct_a:.2f}% &nbsp;({dV_a:.2f} V)</div>
+                        </div>""",
+                        unsafe_allow_html=True
+                    )
                 with col_b:
-                    st.markdown(f"### B  {v_mat_b} / {e_sect_b} mm2")
-                    st.markdown(f"""<div class="result-card"><div class="label">dU</div>
-                        <div class="value" style="color:{color_b};">{pct_b:.2f} % ({dV_b:.2f} V)</div></div>""", unsafe_allow_html=True)
-                fig, ax = make_fig(4, 2)
-                bars = ax.bar([f"A {v_mat_a}\n{e_sect_a}mm2",f"B {v_mat_b}\n{e_sect_b}mm2"],[pct_a,pct_b],
-                    color=[color_a,color_b],alpha=0.85,edgecolor="white",width=0.4)
-                for bar, val in zip(bars, [pct_a,pct_b]):
-                    ax.text(bar.get_x()+bar.get_width()/2, bar.get_height()+0.05, f"{val:.2f}%", ha="center", fontsize=8)
-                ax.axhline(3, color="#e65100", lw=0.8, ls="--", alpha=0.6, label="3% limit")
-                ax.axhline(5, color="#d32f2f", lw=0.8, ls="--", alpha=0.6, label="5% limit")
-                ax.set_ylabel("dU [%]", fontsize=8); ax.set_title("Voltage Drop Comparison", fontsize=9, fontweight="bold")
-                ax.legend(fontsize=7); plt.tight_layout(); st.pyplot(fig, use_container_width=False)
+                    st.markdown(f"### B — {v_mat_b} / {e_sect_b} mm²")
+                    st.markdown(
+                        f"""<div class="result-card">
+                            <div class="label">dU</div>
+                            <div class="value" style="color:{color_b};">{pct_b:.2f}% &nbsp;({dV_b:.2f} V)</div>
+                        </div>""",
+                        unsafe_allow_html=True
+                    )
+
+                fig, ax = make_fig(4, 2.5)
+                labels = [f"A — {v_mat_a}\n{e_sect_a} mm²", f"B — {v_mat_b}\n{e_sect_b} mm²"]
+                bars   = ax.bar(labels, [pct_a, pct_b], color=[color_a, color_b],
+                                alpha=0.85, edgecolor="white", width=0.4)
+                for bar, val in zip(bars, [pct_a, pct_b]):
+                    ax.text(bar.get_x() + bar.get_width() / 2,
+                            bar.get_height() + 0.05,
+                            f"{val:.2f}%", ha="center", fontsize=8)
+                ax.axhline(3, color="#e65100", lw=0.8, ls="--", alpha=0.7, label="3% limit")
+                ax.axhline(5, color="#d32f2f", lw=0.8, ls="--", alpha=0.7, label="5% limit")
+                ax.set_ylabel("dU [%]", fontsize=8)
+                ax.set_title("Voltage Drop Comparison", fontsize=9, fontweight="bold")
+                ax.legend(fontsize=7)
+                plt.tight_layout()
+                st.pyplot(fig, use_container_width=False)
+
+                diff = abs(pct_a - pct_b)
                 winner = "A" if pct_a <= pct_b else "B"
-                st.info(f"Lower drop: {winner}  |  A {pct_a:.2f}%  vs  B {pct_b:.2f}%")
+                st.info(
+                    f"✅ Lower drop: **Scenario {winner}**  |  "
+                    f"A = {pct_a:.2f}%  vs  B = {pct_b:.2f}%  "
+                    f"(Δ = {diff:.2f}%)"
+                )
+
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Calculation error: {e}")
+
     show_history("3. Voltage Drop")
 
 
