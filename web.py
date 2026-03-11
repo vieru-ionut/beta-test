@@ -529,11 +529,11 @@ elif module == "3. Voltage Drop":
 
         rho (resistivity at 70 °C):
           Cu  = 0.02363 (at 70°C) Ω·mm²/m  (~1/44 S·m/mm²)
-          Al  = 0.03396 (at 70°C) Ω·mm²/m  (~1/28 S·m/mm²)
+          Al  = 0.03760 (at 70°C) Ω·mm²/m  (~1/28 S·m/mm²)
         x_l (reactance, generic):
           ≈ 0.08 mΩ/m  (suitable for common cable sections)
         """
-        rho = 0.02363 if mat == "Cu" else 0.03396
+        rho = 0.02363 if mat == "Cu" else 0.03760
         x_l = 0.08e-3   # Ω/m
 
         R = (rho * e_len) / sect   # total resistance [Ω]
@@ -562,7 +562,7 @@ elif module == "3. Voltage Drop":
         Minimum conductor section to stay within standard limits.
         Uses the simplified formula (reactance neglected) — conservative side.
         """
-        rho = 0.02363 if mat == "Cu" else 0.03396  # 70°C operating temp
+        rho = 0.02363 if mat == "Cu" else 0.03760  # 70°C operating temp
         out = {}
         for lim in [3, 5, 8]:
             lv  = (lim / 100.0) * v_sys
@@ -637,7 +637,7 @@ elif module == "3. Voltage Drop":
 
                 # Calculation breakdown
                 with st.expander("🔍 Calculation details"):
-                    rho_a = 0.02363 if v_mat_a == "Cu" else 0.03396
+                    rho_a = 0.02363 if v_mat_a == "Cu" else 0.03760
                     R_a   = (rho_a * e_len) / e_sect_a
                     X_a   = 0.08e-3 * e_len
                     st.markdown(
