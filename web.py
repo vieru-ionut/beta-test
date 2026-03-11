@@ -528,12 +528,12 @@ elif module == "3. Voltage Drop":
         dU = 2 × Ib × R                          [DC]
 
         rho (resistivity at 70 °C):
-          Cu  = 0.0225 Ω·mm²/m  (~1/44 S·m/mm²)
-          Al  = 0.0360 Ω·mm²/m  (~1/28 S·m/mm²)
+          Cu  = 0.02363 (at 70°C) Ω·mm²/m  (~1/44 S·m/mm²)
+          Al  = 0.03396 (at 70°C) Ω·mm²/m  (~1/28 S·m/mm²)
         x_l (reactance, generic):
           ≈ 0.08 mΩ/m  (suitable for common cable sections)
         """
-        rho = 0.0225 if mat == "Cu" else 0.0360
+        rho = 0.02363 if mat == "Cu" else 0.03396
         x_l = 0.08e-3   # Ω/m
 
         R = (rho * e_len) / sect   # total resistance [Ω]
@@ -562,7 +562,7 @@ elif module == "3. Voltage Drop":
         Minimum conductor section to stay within standard limits.
         Uses the simplified formula (reactance neglected) — conservative side.
         """
-        rho = 0.0225 if mat == "Cu" else 0.0360
+        rho = 0.02363 if mat == "Cu" else 0.03396  # 70°C operating temp
         out = {}
         for lim in [3, 5, 8]:
             lv  = (lim / 100.0) * v_sys
@@ -620,15 +620,14 @@ elif module == "3. Voltage Drop":
                             unsafe_allow_html=True
                         )
 
-                # Chart
+                # Chart — fiecare bara e verde daca dU <= limita, rosu daca depaseste
                 fig, ax = make_fig(4.5, 2)
                 limits = [3, 5, 8]
-                ax.barh(["3%", "5%", "8%"], limits, color="#e0e0e0", height=0.5)
-                ax.barh(
-                    ["3%", "5%", "8%"],
-                    [min(pct_a, l) for l in limits],
-                    color=color_a, height=0.5, alpha=0.85
-                )
+                labels = ["3%", "5%", "8%"]
+                bar_colors = ["#2e7d32" if pct_a <= l else "#d32f2f" for l in limits]
+                ax.barh(labels, limits, color="#e0e0e0", height=0.5)
+                for i, (lbl, lim, bcolor) in enumerate(zip(labels, limits, bar_colors)):
+                    ax.barh(lbl, min(pct_a, lim), color=bcolor, height=0.5, alpha=0.85)
                 ax.axvline(pct_a, color="#1976d2", lw=1.5, ls="--", label=f"dU = {pct_a:.2f}%")
                 ax.set_xlabel("Voltage Drop [%]", fontsize=8)
                 ax.set_title("Drop vs. Standard Limits", fontsize=9, fontweight="bold")
@@ -638,7 +637,7 @@ elif module == "3. Voltage Drop":
 
                 # Calculation breakdown
                 with st.expander("🔍 Calculation details"):
-                    rho_a = 0.0225 if v_mat_a == "Cu" else 0.0360
+                    rho_a = 0.02363 if v_mat_a == "Cu" else 0.03396
                     R_a   = (rho_a * e_len) / e_sect_a
                     X_a   = 0.08e-3 * e_len
                     st.markdown(
@@ -713,7 +712,6 @@ elif module == "3. Voltage Drop":
             st.error(f"Calculation error: {e}")
 
     show_history("3. Voltage Drop")
-
 
 # ═══════════════════════════════════
 # MODULE 4 — CABLE CAPACITY
