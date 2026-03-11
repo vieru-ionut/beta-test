@@ -5,7 +5,7 @@ import os
 
 # PAGE CONFIG
 st.set_page_config(
-    page_title="Electrical Calculator",
+    page_title="CableCalc",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -36,7 +36,16 @@ def check_password():
         return True
     col_a, col_b, col_c = st.columns([1, 2, 1])
     with col_b:
-        st.markdown("## ⚡ Elec Calc")
+        st.markdown("## ⚡ CableCalc")
+
+		# --- PANOU WHAT'S NEW ---
+        st.info("""
+        **✨ What's new in Version 2.0:**
+        * **New Module:** Battery & UPS sizing calculator.(beta)
+        * **Scenario Comparison:** Compare Cable A vs Cable B side-by-side.
+        * **Expanded DB:** Support for Single Wire installation.
+        """)
+		
         pwd = st.text_input("Password", type="password")
         if st.button("Log in", use_container_width=True):
             if pwd == st.secrets.get("password", ""):
@@ -85,8 +94,8 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
                 else:
                     return {
                         "Trefoil (F)":        [0,0,0,0,0,0, 84,105,128,166,203,237,274,315,375,434],
- 			"Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,112,139,169,217,265,308,356,407,482,557],
-			"Single layer with distance - vertical (G)":        [0,0,0,0,0,0,99,124,152,196,241,282,327,376,447,519],
+ 						"Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,112,139,169,217,265,308,356,407,482,557],
+						"Single layer with distance - vertical (G)":        [0,0,0,0,0,0,99,124,152,196,241,282,327,376,447,519],
                         "In Conduit (B1)":       [0,16.5,22,28,39,53,70,86,104,133,161,186,204,230,269,306],
                         "Pipe in Ground (D1)":   [0, 18.5, 24, 30, 39, 50, 64, 77, 91, 112, 132, 150, 169, 190, 218, 247],
                         "Direct in Ground (D2)": [0, 0, 0, 0, 0, 53, 69, 83, 99, 122, 148, 169, 189, 214, 250, 282],
@@ -95,15 +104,15 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
                 if loaded_cond == 2:
                     return {
                         "Cable Tray (F)":        [0,0,0,0,0, 0,121,150,184,237,289,337,389,447,530,613],
-                        "In Conduit (B1)":       [0,25,33,43,59, 79, 105,130,157,200,242,281,207,351,412,471],
+                        "In Conduit (B1)":       [0,25,33,43,59, 79, 105,130,157,200,242,281,307,351,412,471],
                         "Pipe in Ground (D1)":   [0, 26, 33, 42, 55, 71, 90, 108, 128, 158, 186, 211, 238, 267, 307, 346],
                         "Direct in Ground (D2)": [0, 0, 0, 0, 0, 76.0, 98, 117, 139, 170, 204, 223, 261, 296, 343, 386],
                     }
                 else:
                     return {
                         "Trefoil (F)":        [0,0,0,0,0,0, 103,129,159,206,253,296,343,395,471,547],
- 			"Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,138,172,210,271,332,387,448,515,611,708],
-			"Single layer with distance - vertical (G)":        [0,0,0,0,0,0,122,153,188,244,300,351,408,470,561,652],
+ 						"Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,138,172,210,271,332,387,448,515,611,708],
+						"Single layer with distance - vertical (G)":        [0,0,0,0,0,0,122,153,188,244,300,351,408,470,561,652],
                         "In Conduit (B1)":       [0,22,29,38,52, 71, 93,116,140,179,217,251,267,300,351,402],
                         "Pipe in Ground (D1)":   [0, 22, 28, 35, 46, 59, 75, 90, 106, 130, 154, 174, 197, 220, 253, 286],
                         "Direct in Ground (D2)": [0, 0, 0, 0, 0, 64, 82, 98, 117, 144, 172, 197, 220, 250, 290, 326],
@@ -120,8 +129,8 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
             else:
                 return {
                     "Trefoil (F)":        [0,0,0,0,0,0, 110,137,167,216,264,308,356,409,485,561],
- 		    "Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,146,181,219,281,341,396,456,521,615,709],
- 		    "Single layer with distance - vertical (G)":        [0,0,0,0,0,0,130,162,197,254,311,362,419,480,569,659],
+ 		   			"Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,146,181,219,281,341,396,456,521,615,709],
+ 		    		"Single layer with distance - vertical (G)":        [0,0,0,0,0,0,130,162,197,254,311,362,419,480,569,659],
                     "In Conduit (B1)":       [16, 22, 30, 38, 52,  68,  89, 110, 132, 166, 199, 230, 258, 295, 346, 396],
                     "Pipe in Ground (D1)":   [18, 24, 30, 38, 50,  64,  82,  98, 116, 143, 169, 192, 217, 243, 280, 316],
                     "Direct in Ground (D2)": [19, 24, 33, 41, 54,  70,  92, 110, 130, 162, 193, 220, 246, 278, 320, 359],
@@ -137,8 +146,8 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
             else:
                 return {
                     "Trefoil (F)":        [0,0,0,0,0,0, 135,169,207,268,328,383,444,510,607,703],
- 		    "Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,182,226,275,353,430,500,577,661,781,902],
-		    "Single layer with distance - vertical (G)":        [0,0,0,0,0,0,161,201,246,318,389,454,527,605,719,833],
+ 		    		"Single layer with distance - horizontal (G)":        [0,0,0,0,0,0,182,226,275,353,430,500,577,661,781,902],
+		    		"Single layer with distance - vertical (G)":        [0,0,0,0,0,0,161,201,246,318,389,454,527,605,719,833],
                     "In Conduit (B1)":       [20, 28, 37, 47,  64,  84, 111, 136, 164, 207, 248, 286, 324, 370, 439, 507],
                     "Pipe in Ground (D1)":   [21, 28, 36, 44,  58,  75,  96, 115, 135, 167, 197, 223, 251, 281, 324, 365],
                     "Direct in Ground (D2)": [23, 30, 39, 49,  65,  84, 107, 129, 153, 188, 226, 257, 287, 324, 375, 419],
@@ -180,7 +189,7 @@ def get_ds60364_data(insulation, loaded_cond, material="Cu", construction="Multi
     if insulation == "PVC":
         if loaded_cond == 2:
             return {
-                "Cable Tray (E)":        [22,16.5,22,22,70, 94,119,148,180,232,282,328,379,434,514,593],
+                "Cable Tray (E)":        [22,30,40,51,70,94,119,148,180,232,282,328,379,434,514,593],
                 "In Conduit (B2)":       [16.5,23,30,38,52, 69, 90,111,133,168,201,232,258,294,344,394],
                 "Pipe in Ground (D1)":   [22,29,37,46,60, 78, 99,119,140,173,204,231,261,292,336,379],
                 "Direct in Ground (D2)": [22,28,38,48,64, 83,110,132,156,192,230,261,293,331,382,427],
@@ -314,8 +323,8 @@ def render_sizing_rows(rows):
 # SIDEBAR
 if os.path.exists("logo.png"):
     st.sidebar.image("logo.png", use_container_width=True)
-st.sidebar.markdown("## ⚡ Elec Calc")
-st.sidebar.caption("DS 60364 — Engineering Tools")
+st.sidebar.markdown("## ⚡ CableCalc")
+st.sidebar.caption("Design Tools")
 module = st.sidebar.radio("", [
     "1. Short Circuit", "2. Cable Sizing", "3. Voltage Drop",
     "4. Cable Capacity", "5. Parallel Cable Load", "6. Converter", "7. Battery / UPS"
@@ -945,4 +954,4 @@ elif module == "7. Battery / UPS":
 
 
 st.markdown("---")
-st.caption("⚡ Elec Calc  ·  DS 60364  ·  Built by Ionut Vieru")
+st.caption("⚠️ Legal Disclaimer: This is an estimation tool and does not replace professional design software or official standards.")
