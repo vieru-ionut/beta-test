@@ -246,7 +246,65 @@ def show_history(module_name):
         if st.button("Clear history", key=f"clr_{module_name}"):
             st.session_state.calc_history = [e for e in st.session_state.calc_history if e["module"] != module_name]
             st.rerun()
+			
+from fpdf import FPDF
+import io
 
+def generate_pdf(title, params: dict, results: dict, notes: str = "") -> bytes:
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    # Header
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, "CableCalc — Calculation Report", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    import datetime
+    pdf.cell(0, 6, f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d  %H:%M')}", ln=True)
+    pdf.ln(4)
+
+    # Title
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.set_fill_color(26, 111, 196)
+    pdf.set_text_color(255, 255, 255)
+    pdf.cell(0, 9, f"  {title}", ln=True, fill=True)
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(3)
+
+    # Input parameters
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.cell(0, 7, "Input Parameters", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    for k, v in params.items():
+        pdf.cell(70, 6, f"  {k}", border="B")
+        pdf.cell(0,  6, str(v), border="B", ln=True)
+    pdf.ln(4)
+
+    # Results
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.cell(0, 7, "Results", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    for k, v in results.items():
+        pdf.set_fill_color(240, 244, 255)
+        pdf.cell(70, 7, f"  {k}", border="B", fill=True)
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0,  7, str(v), border="B", fill=True, ln=True)
+        pdf.set_font("Helvetica", "", 10)
+    pdf.ln(4)
+
+    # Optional notes
+    if notes:
+        pdf.set_font("Helvetica", "I", 9)
+        pdf.set_text_color(120, 120, 120)
+        pdf.multi_cell(0, 5, notes)
+
+    # Footer disclaimer
+    pdf.set_y(-20)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 5, "⚠ Estimation tool only — does not replace professional design software or official standards.", ln=True)
+
+    return bytes(pdf.output())
 
 # TOOLTIPS
 TT = {
@@ -383,7 +441,28 @@ if module == "1. Short Circuit":
         except Exception as e:
             st.error(f"Error: {e}")
     show_history("1. Short Circuit")
-
+ pdf_bytes = generate_pdf(
+        title="Short Circuit — Transformer",
+        params={
+            "Primary Voltage U_pri": f"{u_pri} kV",
+            "Upstream I_k": i_k_pri,
+            "Rated Power S_r": f"{s_r} kVA",
+            "Nominal Voltage U_n": f"{u_n} V",
+            "Short-Circuit Voltage u_k": f"{u_k} %",
+        },
+        results={
+            "Nominal Current IrT": f"{IrT:.1f} A",
+            "Short-Circuit Current Ik''": f"{Ikmax/1000:.2f} kA",
+            "Peak Current ip": f"{ipeak/1000:.2f} kA",
+        },
+        notes="Calculated per IEC 60909. Peak factor κ derived from R/X ratio."
+    )
+    st.download_button(
+        label="📄 Export PDF",
+        data=pdf_bytes,
+        file_name="short_circuit_report.pdf",
+        mime="application/pdf"
+    )
 
 # ═══════════════════════════════════
 # MODULE 2 — CABLE SIZING
