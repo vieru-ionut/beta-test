@@ -441,29 +441,7 @@ if module == "1. Short Circuit":
         except Exception as e:
             st.error(f"Error: {e}")
     show_history("1. Short Circuit")
- pdf_bytes = generate_pdf(
-        title="Short Circuit — Transformer",
-        params={
-            "Primary Voltage U_pri": f"{u_pri} kV",
-            "Upstream I_k": i_k_pri,
-            "Rated Power S_r": f"{s_r} kVA",
-            "Nominal Voltage U_n": f"{u_n} V",
-            "Short-Circuit Voltage u_k": f"{u_k} %",
-        },
-        results={
-            "Nominal Current IrT": f"{IrT:.1f} A",
-            "Short-Circuit Current Ik''": f"{Ikmax/1000:.2f} kA",
-            "Peak Current ip": f"{ipeak/1000:.2f} kA",
-        },
-        notes="Calculated per IEC 60909. Peak factor κ derived from R/X ratio."
-    )
-    st.download_button(
-        label="📄 Export PDF",
-        data=pdf_bytes,
-        file_name="short_circuit_report.pdf",
-        mime="application/pdf"
-    )
-
+ 
 # ═══════════════════════════════════
 # MODULE 2 — CABLE SIZING
 # ═══════════════════════════════════
