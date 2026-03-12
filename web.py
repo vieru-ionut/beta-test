@@ -38,6 +38,45 @@ st.markdown("""
 # ─────────────────────────────────────────────────────────────
 # PDF EXPORT
 # ─────────────────────────────────────────────────────────────
+def _safe(text: str) -> str:
+    """Replace Unicode characters unsupported by Helvetica with ASCII equivalents."""
+    replacements = {
+        "\u2014": "-",   # em dash —
+        "\u2013": "-",   # en dash –
+        "\u2012": "-",   # figure dash
+        "\u2011": "-",   # non-breaking hyphen
+        "\u2192": "->",  # →
+        "\u2190": "<-",  # ←
+        "\u00b2": "2",   # ²
+        "\u00b3": "3",   # ³
+        "\u00b0": " deg",# °
+        "\u03c6": "phi", # φ
+        "\u03a9": "Ohm", # Ω
+        "\u00b7": ".",   # ·
+        "\u2019": "'",   # right single quote
+        "\u2018": "'",   # left single quote
+        "\u201c": '"',   # left double quote
+        "\u201d": '"',   # right double quote
+        "\u2260": "!=",  # ≠
+        "\u2265": ">=",  # ≥
+        "\u2264": "<=",  # ≤
+        "\u00e9": "e",   # é
+        "\u00e8": "e",   # è
+        "\u00e0": "a",   # à
+        "\u00fc": "u",   # ü
+        "\u00e4": "a",   # ä
+        "\u00f6": "o",   # ö
+        "\u2022": "*",   # bullet •
+        "\u26a1": "!",   # ⚡
+        "\u2139": "i",   # ℹ
+        "\u2714": "v",   # ✔
+        "\u274c": "x",   # ✗
+    }
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
+    # Final fallback: strip anything still outside latin-1 range
+    return text.encode("latin-1", errors="replace").decode("latin-1")
+
 def generate_pdf(title, params: dict, results: dict, notes: str = "", fig=None) -> bytes:
     pdf = FPDF()
     pdf.add_page()
@@ -49,7 +88,7 @@ def generate_pdf(title, params: dict, results: dict, notes: str = "", fig=None) 
     pdf.set_font("Helvetica", "B", 14)
     pdf.set_text_color(255, 255, 255)
     pdf.set_xy(10, 4)
-    pdf.cell(0, 10, "CableCalc — Calculation Report", ln=False)
+    pdf.cell(0, 10, _safe("CableCalc - Calculation Report"), ln=False)
     pdf.set_font("Helvetica", "", 8)
     pdf.set_xy(140, 7)
     pdf.cell(0, 6, datetime.datetime.now().strftime("%Y-%m-%d   %H:%M"), ln=False)
@@ -59,7 +98,7 @@ def generate_pdf(title, params: dict, results: dict, notes: str = "", fig=None) 
     # Section title
     pdf.set_font("Helvetica", "B", 13)
     pdf.set_fill_color(232, 240, 253)
-    pdf.cell(0, 9, f"  {title}", ln=True, fill=True)
+    pdf.cell(0, 9, _safe(f"  {title}"), ln=True, fill=True)
     pdf.ln(4)
 
     # Input Parameters table
@@ -72,8 +111,8 @@ def generate_pdf(title, params: dict, results: dict, notes: str = "", fig=None) 
     fill = False
     for k, v in params.items():
         pdf.set_fill_color(245, 248, 255) if fill else pdf.set_fill_color(255, 255, 255)
-        pdf.cell(80, 6.5, f"  {k}", border="B", fill=True)
-        pdf.cell(0,  6.5, f"  {str(v)}", border="B", fill=True, ln=True)
+        pdf.cell(80, 6.5, _safe(f"  {k}"), border="B", fill=True)
+        pdf.cell(0,  6.5, _safe(f"  {str(v)}"), border="B", fill=True, ln=True)
         fill = not fill
     pdf.ln(5)
 
@@ -87,9 +126,9 @@ def generate_pdf(title, params: dict, results: dict, notes: str = "", fig=None) 
     for k, v in results.items():
         pdf.set_fill_color(240, 255, 242) if fill else pdf.set_fill_color(255, 255, 255)
         pdf.set_font("Helvetica", "", 10)
-        pdf.cell(80, 7, f"  {k}", border="B", fill=True)
+        pdf.cell(80, 7, _safe(f"  {k}"), border="B", fill=True)
         pdf.set_font("Helvetica", "B", 10)
-        pdf.cell(0,  7, f"  {str(v)}", border="B", fill=True, ln=True)
+        pdf.cell(0,  7, _safe(f"  {str(v)}"), border="B", fill=True, ln=True)
         fill = not fill
     pdf.ln(5)
 
@@ -112,7 +151,7 @@ def generate_pdf(title, params: dict, results: dict, notes: str = "", fig=None) 
     if notes:
         pdf.set_font("Helvetica", "I", 9)
         pdf.set_text_color(100, 100, 100)
-        pdf.multi_cell(0, 5, notes)
+        pdf.multi_cell(0, 5, _safe(notes))
         pdf.ln(2)
 
     # Footer
@@ -120,7 +159,7 @@ def generate_pdf(title, params: dict, results: dict, notes: str = "", fig=None) 
     pdf.set_font("Helvetica", "I", 7)
     pdf.set_text_color(160, 160, 160)
     pdf.cell(0, 5,
-        "⚠  Estimation tool only — does not replace professional design software or official standards (DS 60364 / IEC 60364-5-52).",
+        "WARNING: Estimation tool only - does not replace professional design software or official standards (DS 60364 / IEC 60364-5-52).",
         ln=True)
 
     return bytes(pdf.output())
